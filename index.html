@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<!-- Kestrel Air: UED100 Assessment 2 prototype (original brand, not Qantas). -->
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover lets the CSS safe-area rules work on notched iPhones -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12263a">
+  <meta name="description" content="Prototype airline booking interface for UED100 Assessment 2.">
+  <title>Kestrel Air | Plan your trip</title>
+  <!-- Minified builds are loaded for speed; readable sources are css/styles.css and js/main.js. -->
+  <link rel="stylesheet" href="css/styles.min.css">
+  <!-- defer: script downloads in parallel, runs after HTML parse (A1: reduce blocking JS) -->
+  <script src="js/main.min.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<!-- ===== HEADER: logo, mobile menu button, main navigation ===== -->
+<header class="site-header">
+  <a class="logo" href="#main"><img src="assets/logo.svg" width="150" height="36" alt="Kestrel Air home"></a>
+    <!-- Shown below 900px only (CSS). aria-expanded/aria-controls let screen readers announce open or closed. -->
+<button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainNav">Menu</button>
+    <!-- Each dropdown is a <button> controlling a hidden panel; main.js toggles aria-expanded and "hidden". -->
+<nav id="mainNav" class="main-nav" aria-label="Main">
+    <ul>
+            <!-- Dropdown panel. ".panel-top" holds the 3 most-used links, emphasised in CSS (A1 recommendation 2). -->
+<li class="has-panel">
+        <button class="panel-btn" aria-expanded="false" aria-controls="p-flights">Flights</button>
+        <div class="panel" id="p-flights" hidden>
+          <div class="panel-top">
+            <p class="panel-title">Most used</p>
+            <a href="#search">Book a flight</a><a href="#search">Manage booking</a><a href="#search">Check in</a>
+          </div>
+          <div class="panel-more"><a href="#" data-placeholder>Flight status</a><a href="#" data-placeholder>Flight credit</a><a href="#" data-placeholder>Multi-city</a><a href="#" data-placeholder>Timetables</a></div>
+        </div>
+      </li>
+      <li class="has-panel">
+        <button class="panel-btn" aria-expanded="false" aria-controls="p-ff">Frequent flyer</button>
+        <div class="panel" id="p-ff" hidden>
+          <div class="panel-top">
+            <p class="panel-title">Most used</p>
+            <a href="#search">Book with points</a><a href="#" data-placeholder>Check points balance</a><a href="#" data-placeholder>Track status credits</a>
+          </div>
+          <div class="panel-more"><a href="#" data-placeholder>Earn points</a><a href="#" data-placeholder>Partners</a><a href="#" data-placeholder>Join free</a></div>
+        </div>
+      </li>
+      <li class="has-panel">
+        <button class="panel-btn" aria-expanded="false" aria-controls="p-bank">Banking &amp; insurance</button>
+        <div class="panel" id="p-bank" hidden>
+          <div class="panel-top">
+            <p class="panel-title">Most used</p>
+            <a href="#" data-placeholder>Credit cards</a><a href="#" data-placeholder>Travel insurance</a><a href="#" data-placeholder>Travel money</a>
+          </div>
+          <div class="panel-more"><a href="#" data-placeholder>Home loans</a><a href="#" data-placeholder>Life insurance</a><a href="#" data-placeholder>Pet insurance</a></div>
+        </div>
+      </li>
+      <li><a class="nav-link" href="#contact">Help</a></li>
+      <li><button type="button" class="btn btn-primary btn-small" id="loginBtn" aria-haspopup="dialog">Log in</button></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- ===== MAIN CONTENT (target of the skip link) ===== -->
+<main id="main">
+    <!-- HERO: background video + h1 + search. Search is placed first so the main task is central (A1 UX analysis). -->
+<section class="hero">
+    <!-- Decorative looping video (muted, no audio, 12 s). The 1080p file loads by default; main.js upgrades to the
+         4K file only on large, high-resolution screens with a fast connection (keeps mobile light, A1 performance finding).
+         The poster shows first so the hero looks right before the video loads. -->
+    <video class="hero-img" id="heroVideo" poster="assets/hero-poster.jpg" width="1920" height="672"
+           muted loop playsinline preload="metadata" aria-hidden="true">
+      <source src="assets/hero-loop-1080.mp4" type="video/mp4">
+    </video>
+    <div class="hero-inner">
+      <h1>Plan your trip</h1>
+
+            <!-- SEARCH PANEL: tabs follow the WAI-ARIA tabs pattern (roving tabindex, arrow keys in main.js). -->
+<section class="search" id="search" aria-label="Search">
+        <div role="tablist" aria-label="Search type" class="tabs">
+          <button role="tab" id="tab-flights" aria-selected="true" aria-controls="pane-flights">Flights</button>
+          <button role="tab" id="tab-hotels" aria-selected="false" aria-controls="pane-hotels" tabindex="-1">Hotels</button>
+          <button role="tab" id="tab-cars" aria-selected="false" aria-controls="pane-cars" tabindex="-1">Cars</button>
+        </div>
+
+        <div role="tabpanel" id="pane-flights" aria-labelledby="tab-flights">
+                    <!-- novalidate: JS shows custom, accessible error messages instead of browser pop-ups. -->
+<form id="searchForm" novalidate>
+            <div class="grid">
+              <div class="field"><label for="trip">Trip</label>
+                <select id="trip"><option value="return">Return</option><option value="oneway">One way</option></select></div>
+              <div class="field"><label for="from">From</label>
+                <select id="from" required><option value="">Choose airport</option><option>Sydney (SYD)</option><option>Melbourne (MEL)</option><option>Brisbane (BNE)</option><option>Perth (PER)</option></select>
+                <p class="error" id="from-err" role="alert"></p></div>
+              <div class="field"><div class="label-row"><label for="to">To</label><button type="button" class="swap" id="swap" aria-label="Swap From and To airports">Swap</button></div>
+                <select id="to" required><option value="">Choose airport</option><option>Sydney (SYD)</option><option>Melbourne (MEL)</option><option>Brisbane (BNE)</option><option>Perth (PER)</option></select>
+                <p class="error" id="to-err" role="alert"></p></div>
+              <div class="field"><label for="depart">Depart</label>
+                <input type="date" id="depart" placeholder="yyyy-mm-dd" required><p class="error" id="depart-err" role="alert"></p></div>
+                            <!-- Hidden by JS when "One way" is chosen. -->
+<div class="field" id="returnField"><label for="ret">Return</label>
+                <input type="date" id="ret" placeholder="yyyy-mm-dd"><p class="error" id="ret-err" role="alert"></p></div>
+              <div class="field"><label for="pax">Adults</label>
+                <input type="number" id="pax" min="1" max="9" value="1"><p class="error" id="pax-err" role="alert"></p></div>
+            </div>
+            <div class="search-foot">
+              <!-- Replaces the small "Rewards" toggle (A1 recommendation 3) -->
+              <button type="button" id="points" class="switch" role="switch" aria-checked="false">
+                <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+                <span>Book with points</span>
+              </button>
+              <button class="btn btn-primary" type="submit" id="searchBtn">Search flights</button>
+            </div>
+            <p id="searchResult" class="result" role="status"></p>
+          </form>
+        </div>
+        <div role="tabpanel" id="pane-hotels" aria-labelledby="tab-hotels" hidden><p class="stub">Hotel search is outside this prototype's scope.</p></div>
+        <div role="tabpanel" id="pane-cars" aria-labelledby="tab-cars" hidden><p class="stub">Car hire search is outside this prototype's scope.</p></div>
+      </section>
+
+      <ul class="quick">
+        <li><a href="#" data-placeholder>Manage booking</a></li><li><a href="#" data-placeholder>Check in</a></li>
+        <li><a href="#" data-placeholder>Flight status</a></li><li><a href="#" data-placeholder>Use flight credit</a></li>
+      </ul>
+      <!-- WCAG 2.2.2: moving content longer than 5 seconds needs a pause control -->
+      <button type="button" class="video-toggle" id="videoToggle">Play background video</button>
+    </div>
+  </section>
+
+    <!-- POPULAR ROUTES: interactive. Slider filters by budget; the "Book with points" switch changes prices to points;
+       "Search this route" fills the search form. Fares are illustrative, not real. -->
+  <section class="routes" id="routes" aria-labelledby="routes-h">
+    <h2 id="routes-h">Popular routes</h2>
+    <div class="route-tools">
+      <div class="budget">
+        <label for="budget">Show fares up to <strong id="budgetOut">$300</strong></label>
+        <input type="range" id="budget" min="80" max="300" step="10" value="300">
+      </div>
+      <p id="routeCount" class="route-count" role="status">6 routes shown</p>
+    </div>
+    <div class="route-grid">
+      <article class="route" data-from="Sydney (SYD)" data-to="Melbourne (MEL)" data-price="89" data-points="7500">
+        <p class="route-codes" aria-hidden="true">SYD &rarr; MEL</p><h3>Sydney to Melbourne</h3>
+        <p class="route-price"><span class="amount">$89</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+      <article class="route" data-from="Sydney (SYD)" data-to="Brisbane (BNE)" data-price="99" data-points="8000">
+        <p class="route-codes" aria-hidden="true">SYD &rarr; BNE</p><h3>Sydney to Brisbane</h3>
+        <p class="route-price"><span class="amount">$99</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+      <article class="route" data-from="Brisbane (BNE)" data-to="Melbourne (MEL)" data-price="129" data-points="10500">
+        <p class="route-codes" aria-hidden="true">BNE &rarr; MEL</p><h3>Brisbane to Melbourne</h3>
+        <p class="route-price"><span class="amount">$129</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+      <article class="route" data-from="Melbourne (MEL)" data-to="Perth (PER)" data-price="199" data-points="15000">
+        <p class="route-codes" aria-hidden="true">MEL &rarr; PER</p><h3>Melbourne to Perth</h3>
+        <p class="route-price"><span class="amount">$199</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+      <article class="route" data-from="Sydney (SYD)" data-to="Perth (PER)" data-price="249" data-points="18000">
+        <p class="route-codes" aria-hidden="true">SYD &rarr; PER</p><h3>Sydney to Perth</h3>
+        <p class="route-price"><span class="amount">$249</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+      <article class="route" data-from="Brisbane (BNE)" data-to="Perth (PER)" data-price="279" data-points="19500">
+        <p class="route-codes" aria-hidden="true">BNE &rarr; PER</p><h3>Brisbane to Perth</h3>
+        <p class="route-price"><span class="amount">$279</span> <span class="unit">one way</span></p>
+        <button type="button" class="btn btn-outline">Search this route</button></article>
+    </div>
+    <p id="noRoutes" class="stub" hidden>No routes at this price. Raise the slider to see more.</p>
+  </section>
+
+  <!-- OFFERS: auto-fit grid. Images below the fold use loading="lazy" and explicit width/height to avoid layout shift (A1: 0.123 CLS on Qantas). -->
+<section class="offers" aria-labelledby="offers-h">
+    <h2 id="offers-h">Offers on now</h2>
+    <div class="cards">
+      <!-- Each card: distinct illustration (width/height reserve space, loading="lazy" defers off-screen images) + a badge + text -->
+      <article class="card">
+        <div class="card-media"><img loading="lazy" src="assets/offer-domestic.svg" width="600" height="360" alt="Plane flying over red desert rock at sunset"><span class="badge">Save up to 30%</span></div>
+        <h3>Up to 30% off domestic fares</h3><p>Book by 30 November for travel before March.</p>
+      </article>
+      <article class="card">
+        <div class="card-media"><img loading="lazy" src="assets/offer-points.svg" width="600" height="360" alt="Star medallion and plane trail across a dusk sky"><span class="badge">Double points</span></div>
+        <h3>Double points on weekend flights</h3><p>Earn more when you fly Friday to Sunday.</p>
+      </article>
+      <article class="card">
+        <div class="card-media"><img loading="lazy" src="assets/offer-insurance.svg" width="600" height="360" alt="Suitcase beside a protective shield with a tick"><span class="badge">Add at checkout</span></div>
+        <h3>Add travel insurance</h3><p>Cover your trip in two clicks at checkout.</p>
+      </article>
+    </div>
+  </section>
+
+    <!-- CONTACT FORM: labels, autocomplete tokens, JS validation, errors announced with role="alert". -->
+<section class="contact" id="contact" aria-labelledby="contact-h">
+    <h2 id="contact-h">Contact us</h2>
+    <form id="contactForm" novalidate>
+      <div class="field"><label for="cname">Full name</label><input id="cname" autocomplete="name" required><p class="error" id="cname-err" role="alert"></p></div>
+      <div class="field"><label for="cemail">Email</label><input id="cemail" type="email" autocomplete="email" required><p class="error" id="cemail-err" role="alert"></p></div>
+      <div class="field"><label for="cmsg">Message</label><textarea id="cmsg" rows="4" maxlength="500" required></textarea><p class="error" id="cmsg-err" role="alert"></p></div>
+      <button class="btn btn-primary" type="submit">Send message</button>
+      <p id="contactResult" class="result" role="status"></p>
+    </form>
+  </section>
+</main>
+
+<!-- Live region: tells all users when a placeholder link is out of scope. -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- Login dialog: native <dialog> gives focus trapping, Esc to close and focus return for free -->
+<dialog id="loginDialog" aria-labelledby="login-h">
+  <h2 id="login-h">Log in</h2>
+  <form id="loginForm" novalidate>
+    <div class="field"><label for="lemail">Email or member number</label>
+      <input id="lemail" name="username" autocomplete="username" maxlength="100" required>
+      <p class="error" id="lemail-err" role="alert"></p></div>
+    <div class="field"><label for="lpass">Password</label>
+      <input id="lpass" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+      <p class="error" id="lpass-err" role="alert"></p></div>
+    <label class="check"><input type="checkbox" id="showPass"> Show password</label>
+    <p id="loginResult" class="result" role="status"></p>
+    <div class="dialog-actions">
+      <button type="submit" class="btn btn-primary">Log in</button>
+      <button type="button" class="btn btn-outline" id="loginClose">Cancel</button>
+    </div>
+    <p class="note">Prototype only: nothing is sent or stored. A live site would use HTTPS, multi-factor authentication and server-side checks.</p>
+  </form>
+</dialog>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site-footer"><p>Kestrel Air is a fictional brand created for a university prototype.</p></footer>
+</body>
+</html>
